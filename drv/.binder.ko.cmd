@@ -1,1 +1,0 @@
-cmd_/home/lee/work/drv/binder.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/lee/work/drv/binder.ko /home/lee/work/drv/binder.o /home/lee/work/drv/binder.mod.o;  true
