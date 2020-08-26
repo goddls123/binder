@@ -8,7 +8,12 @@
 
 int main(){
 	int fd;
-	
+	int a = PT_MONITOR;
+	//char *buffer;
+	//char buffer[16] = {0,};	// 
+	char buffer[16];	// 
+	struct io d;
+
 	fd = open("/dev/binder",O_RDWR);
 	printf("fd = %d\n", fd);
 
@@ -19,8 +24,12 @@ int main(){
 	else
 		printf("binder detect\n");
 
+	ioctl(fd, IOSET_TYPE, PT_MONITOR);
+	printf("send: ping\n");
+	ioctl(fd, IO_PING, buffer);
 
-	ioctl(fd,IOSET_TYPE,PT_IOMAN);
+
+	printf("recv: %s\n",buffer);
 	while(1){}
 
 	close(fd);	
