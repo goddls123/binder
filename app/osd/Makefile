@@ -2,10 +2,10 @@
 
 CC =gcc
 INCLUDE = -I../../drv
-TARGET = monitor_app 
+TARGET = osd_app 
 
 all:
-	$(CC) -o $(TARGET) monitor_app.c $(INCLUDE)
+	$(CC) -o $(TARGET) *.c $(INCLUDE)
 
 clean:
 	rm -f *.o

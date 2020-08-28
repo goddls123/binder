@@ -3,13 +3,19 @@
 CC =gcc
 INCLUDE = -I../drv
 
-SUBDIR = monitor ioman
-
-all: $(SUBDIR)
-
-$(SUBDIR)::
-	$(MAKE) -C $@ all
+SUBDIR = monitor ioman osd
 
 
-clean:
-	 $(SUBDIR) rm -f *_app *.o
+
+build: $(addsuffix .build,$(SUBDIR))
+
+$(addsuffix .build,$(SUBDIR)):
+	echo $@
+	$(MAKE) -C $(subst .build,,$@) all
+
+
+clean: $(addsuffix .clean,$(SUBDIR))
+
+$(addsuffix .clean,$(SUBDIR)):
+	$(MAKE) -C $(subst .clean,,$@) clean
+#	$(MAKE) -C $@ clean

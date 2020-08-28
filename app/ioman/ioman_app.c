@@ -12,7 +12,6 @@ int main(){
 	//char *buffer;
 	//char buffer[16] = {0,};	// 
 	char buffer[16];	// 
-	struct io d;
 
 	fd = open("/dev/binder",O_RDWR);
 	printf("fd = %d\n", fd);

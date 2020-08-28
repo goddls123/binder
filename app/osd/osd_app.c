@@ -31,17 +31,19 @@ int main()
 	else
 		printf("binder detect\n");
 
-//	ioctl(fd, IOSET_TYPE, PT_MONITOR);
+	ioctl(fd, IOSET_TYPE, PT_OSD);
 	printf("send: ping\n");
-	ioctl(fd, IO_PING, buffer);
+	ioctl(fd, IO_PING);
+	
+	r=ioctl(fd, DM_DISPLAY_TEXT, buffer);
+	 
 	
 
-//	printf("recv: %s\n",buffer);
 	while(1){
-		if(( r=ioctl(fd, IOG_MESSEGE, buffer))>0){
-			read(fd,buffer, sizeof(char)*16);
-			printf("%s\n",buffer);
-	}
+//		if(( r=ioctl(fd, DM_DISPLAY_TEXT, buffer))>0){
+//			read(fd,buffer, sizeof(char)*16);
+//			printf("%s\n",buffer);
+//	}
 		sleep(0.5);
 	}
 

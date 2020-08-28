@@ -1,7 +1,7 @@
 
 
 CC =gcc
-INCLUDE = -I/home/lee/work/binder/drv
+INCLUDE = -I../../drv
 
 
 all:
