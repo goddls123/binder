@@ -1,11 +1,20 @@
+TOP = $(shell pwd)
+export TOP
+
+CC = gcc
+export CC
+
+DRVPATH = $(shell cd ../drv; pwd)
+export DRVPATH
 
 
-CC =gcc
-INCLUDE = -I../drv
+INCLUDE = -I$(DRVPATH)
+
 
 SUBDIR = monitor ioman osd
 
 
+CLEANDIRS = $(SUBDIR:%=clean-%)
 
 build: $(addsuffix .build,$(SUBDIR))
 
@@ -14,8 +23,7 @@ $(addsuffix .build,$(SUBDIR)):
 	$(MAKE) -C $(subst .build,,$@) all
 
 
-clean: $(addsuffix .clean,$(SUBDIR))
+clean: $(CLEANDIRS)
 
-$(addsuffix .clean,$(SUBDIR)):
-	$(MAKE) -C $(subst .clean,,$@) clean
-#	$(MAKE) -C $@ clean
+$(CLEANDIRS):
+	$(MAKE) -C $(@:clean-%=%) clean

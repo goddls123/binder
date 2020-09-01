@@ -1,12 +1,18 @@
 
+TARGET = monitor
+CPPSRCS = monitor_app.c
 
-CC =gcc
-INCLUDE = -I../../drv
-TARGET = monitor_app 
+INCLUDE = -I$(DRVPATH)
 
-all:
-	$(CC) -o $(TARGET) monitor_app.c $(INCLUDE)
+OBJS = $(CPPSRCS:.c=.o)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(OBJS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
-	rm -f *.o
-	rm -f *$(TARGET)
+	rm -f $(OBJS) $(TARGET)
