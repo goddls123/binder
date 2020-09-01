@@ -27,3 +27,7 @@ clean: $(CLEANDIRS)
 
 $(CLEANDIRS):
 	$(MAKE) -C $(@:clean-%=%) clean
+
+test:
+	echo $@
+	echo $(@:clean-%=%)

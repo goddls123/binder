@@ -1,12 +1,18 @@
 
+TARGET = ioman
+CPPSRCS = ioman_app.c
+INCLUDE = -I$(DRVPATH)
+OBJS = $(CPPSRCS:.c=.o)
 
-CC =gcc
-INCLUDE = -I../../drv
+all: $(TARGET)
 
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(OBJS)
 
-all:
-	$(CC) -o ioman_app ioman_app.c $(INCLUDE)
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
-	rm -f *.o
-	rm -f *_app
+	rm -f $(OBJS) $(TARGET)
+
+

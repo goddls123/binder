@@ -1,12 +1,18 @@
 
+TARGET = osd
+CPPSRCS = osd_app.c
 
-CC =gcc
-INCLUDE = -I../../drv
-TARGET = osd_app 
+INCLUDE = -I$(DRVPATH)
+OBJS = $(CPPSRCS:.c=.o)
 
-all:
-	$(CC) -o $(TARGET) *.c $(INCLUDE)
+
+all:$(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(OBJS)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
-	rm -f *.o
-	rm -f *$(TARGET)
+	rm -f *$(TARGET) $(OBJS)
