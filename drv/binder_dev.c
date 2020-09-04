@@ -92,7 +92,6 @@ static int binder_open(struct inode *nodp, struct file *filp){
 	gBinderDev->proc_count++;
 
 	list_add(&mClient->client,&gBinderDev->client_list);	
-//	printk("binder open\n");
 	return 0;
 }
 

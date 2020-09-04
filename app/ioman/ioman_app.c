@@ -12,13 +12,6 @@
 void set_rawMode(){
   struct termios  newt;
   int oldf;
-#if 0
-  newt.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-  newt.c_oflag &= ~OPOST;
-  newt.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-  newt.c_cflag &= ~(CSIZE | PARENB);
-  newt.c_cflag |= CS8;
-#endif
 
   cfmakeraw(&newt);
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
@@ -31,7 +24,6 @@ void get_service(int fd){
 	while(ioctl(fd,IOC_REGISTER_SERVICE,PT_OSD)<0){
 		printf("no service\r");
 	}
-
 	printf("\n");
 }
 
@@ -39,7 +31,7 @@ int main(){
 	struct termios oldt;
 	int fd;
 	int a = PT_MONITOR;
-	char buffer[16];	// 
+	char buffer[16];	 
 	char  ch;
 
 	fd = open("/dev/binder",O_RDWR);
