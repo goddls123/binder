@@ -92,7 +92,7 @@ static int binder_open(struct inode *nodp, struct file *filp){
 	gBinderDev->proc_count++;
 
 	list_add(&mClient->client,&gBinderDev->client_list);	
-	printk("binder open\n");
+//	printk("binder open\n");
 	return 0;
 }
 
@@ -100,6 +100,7 @@ static int binder_open(struct inode *nodp, struct file *filp){
 static int binder_release(struct inode *nodp, struct file *filp){
 	struct list_head *pos, *q;
 	struct binder_client *tmp;
+	struct binder_service *stmp;
 
 	list_for_each_safe(pos,q,&gBinderDev->client_list){
 		tmp = list_entry(pos,struct binder_client, client );
@@ -107,6 +108,17 @@ static int binder_release(struct inode *nodp, struct file *filp){
 			list_del(&tmp->client);
 			printk("%s close\n",process_type_str[tmp->process_type]);
 			kfree(tmp);
+		}
+	}
+	list_for_each_safe(pos,q,&gBinderDev->service_list){
+		stmp = list_entry(pos,struct binder_service, service );
+		if(stmp->pid == current->pid){
+			list_del(&stmp->service);
+			kfree(stmp);
+		}
+		else if(stmp->destination_pid == current->pid){
+			list_del(&stmp->service);
+			kfree(stmp);
 		}
 	}
 	gBinderDev->proc_count--;
@@ -126,10 +138,8 @@ static int binder_register(unsigned long arg){
 		}
 	}
 	if(!type){
-		printk("no service\n");
 		return -1;
 	}
-
 	mservice = kzalloc(sizeof(*mservice), GFP_KERNEL);
 
 
@@ -141,7 +151,6 @@ static int binder_register(unsigned long arg){
 	mservice->destination_type = type;
 	
 
-	printk("qid %d\n", mservice->destination_type);
 	list_add(&mservice->service,&gBinderDev->service_list);	
 
 	return 1;
@@ -164,7 +173,7 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			break; 
 		case IO_PING:
-			printk("ping\n");
+		//	printk("ping\n");
 			msgbuf = kzalloc(sizeof(*msgbuf),GFP_KERNEL);
 			strcpy(msgbuf->msgtxt,pong);
 			list_for_each_entry(q,&gBinderDev->service_list,service){
@@ -193,7 +202,6 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		case IOC_REGISTER_SERVICE:
 			if(binder_register(arg)<0)
 				return -1;
-			printk("service register\n");
 #if 0
 			buf = kzalloc(sizeof(*buf),GFP_KERNEL);
 			if (!buf)
@@ -260,7 +268,10 @@ static long binder_write(struct file *file, const char __user *buffer, size_t co
 			msgbuf->qid  = tmp->destination_pid;
 		}
 	}
-	
+
+	if(!msgbuf->qid)      //no service 
+		return -1;
+
 	list_for_each_entry(tmp,&gBinderDev->service_list,service){
 		if(tmp->pid == current->pid) {
 			msgbuf->qid  = tmp->destination_pid;
@@ -269,16 +280,22 @@ static long binder_write(struct file *file, const char __user *buffer, size_t co
 	
 	copy_from_user(msgbuf->msgtxt,buffer,count);
 	msgbuf->count = count;
-
+#if 0
+	printk("wbuf %s",msgbuf->msgtxt);
+	printk("wuserbuf %s",buffer);
+#endif 
 	list_add(&msgbuf->queue,&gBinderDev->queue_list);
 	
 	gBinderDev->queue_count++;
+	
+	return 0;
 }
 
 static ssize_t binder_read (struct file *file, char __user *buffer, size_t count, loff_t *pos){
 	int ret = 0;
 	struct msgque *tmp;
-
+	
+	memset(buffer,0,count);
 	//printk("count %d\n",gBinderDev->queue_count);
 	tmp =list_entry(gBinderDev->queue_list.next, struct msgque, queue); 
 	if(!tmp)
@@ -291,8 +308,11 @@ static ssize_t binder_read (struct file *file, char __user *buffer, size_t count
 		printk("copy error\n");
 		return 0;
 	}
+#if 0 
 	printk("buf %s",tmp->msgtxt);
 	printk("userbuf %s",buffer);
+	printk("count  %d",tmp->count);
+#endif	
 	list_del(gBinderDev->queue_list.next);
 	gBinderDev->queue_count--;
 	kfree(tmp);
@@ -374,8 +394,7 @@ static int __init binder_init(void)
 		kfree(dev);
 		return ret;
 	}
-
-	dev->proc_entry = proc_create("driver/binder",0644,NULL,&proc_fops);
+dev->proc_entry = proc_create("driver/binder",0644,NULL,&proc_fops);
 	INIT_LIST_HEAD(&dev->client_list);
 	INIT_LIST_HEAD(&dev->queue_list);
 	INIT_LIST_HEAD(&dev->service_list);

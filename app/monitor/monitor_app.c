@@ -7,10 +7,61 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/wait.h>
+#include <signal.h>
 #include "binder_ioctl.h"
 
-int loop(){
-	return 0;
+pid_t child_pid[2];
+void kill_child();
+void ex_osd(){
+
+	child_pid[0] =fork();
+
+	if(child_pid[0] ==0){
+		printf("child process\n");
+		execl("../bin/osd","osd",NULL);
+	}
+}
+
+void ex_ioman(){
+
+	child_pid[1] =fork();
+
+	if(child_pid[1] ==0){
+		printf("child process\n");
+		execl("../bin/ioman","ioman",NULL);
+	}
+}
+
+static void child_handler(int sig){
+	int status;
+	pid_t pid = waitpid(-1,&status,WNOHANG);
+
+	if(!pid)
+		return ;
+	fprintf(stderr,"CHILD EXIT %d\n",pid);
+#if 0 
+	fprintf(stderr,"restart\n");	
+	if(pid == child_pid[0])
+		ex_osd();
+	else if(pid == child_pid[1])
+		ex_ioman();
+#endif
+}
+
+static void kill_handler(int sig){
+
+	printf("process\n");
+	printf("killed\n");
+	kill(child_pid[0],SIGKILL);
+	kill(child_pid[1],SIGKILL);
+	kill(getpid(),SIGINT);
+
+}
+void kill_child(){
+	printf("killing child\n");
+	kill(child_pid[0],SIGKILL);
+	printf("osd killed \n");
 }
 
 int main()
@@ -20,6 +71,8 @@ int main()
 	//char *buffer;
 	char buffer[16] = {0,};	// 
 	int r;
+	pid_t pid;
+
 
 	fd = open("/dev/binder",O_RDWR);
 	printf("fd = %d\n", fd);
@@ -29,19 +82,21 @@ int main()
 		exit(-1);
 	}	
 	else
-		printf("binder detect\n");
+		printf("monitor\n");
 
-//	ioctl(fd, IOSET_TYPE, PT_MONITOR);
-	printf("send: ping\n");
-	ioctl(fd, IO_PING, buffer);
+	ioctl(fd, IOSET_TYPE, PT_MONITOR);
 	
+	ex_osd();
+	ex_osd();
+//	ex_ioman();
 
-//	printf("recv: %s\n",buffer);
+	signal(SIGCHLD,(void *)child_handler);
+	//signal(SIGTERM,(void *)kill_handler);
+
+	printf("start\n");
+
 	while(1){
-		if(( r=ioctl(fd, IOG_MESSEGE, buffer))>0){
-			read(fd,buffer, sizeof(char)*16);
-			printf("%s\n",buffer);
-	}
+	
 		sleep(0.5);
 	}
 

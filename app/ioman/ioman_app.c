@@ -7,40 +7,40 @@
 #include <termios.h>
 #include <string.h>
 
-int kbhit(void)
-{
-  struct termios oldt, newt;
-  int ch;
-  int oldf;
 
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
+
+void set_rawMode(){
+  struct termios  newt;
+  int oldf;
+#if 0
+  newt.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+  newt.c_oflag &= ~OPOST;
+  newt.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+  newt.c_cflag &= ~(CSIZE | PARENB);
+  newt.c_cflag |= CS8;
+#endif
+
+  cfmakeraw(&newt);
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
   fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-  ch = getchar();
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-  fcntl(STDIN_FILENO, F_SETFL, oldf);
-
-  if(ch != EOF)
-  {
-    ungetc(ch, stdin);
-    return 1;
-  }
-
-  return 0;
 }
 
+void get_service(int fd){
+
+	while(ioctl(fd,IOC_REGISTER_SERVICE,PT_OSD)<0){
+		printf("no service\r");
+	}
+
+	printf("\n");
+}
 
 int main(){
+	struct termios oldt;
 	int fd;
 	int a = PT_MONITOR;
-	//char *buffer;
-	//char buffer[16] = {0,};	// 
 	char buffer[16];	// 
+	char  ch;
 
 	fd = open("/dev/binder",O_RDWR);
 	printf("fd = %d\n", fd);
@@ -50,26 +50,33 @@ int main(){
 		exit(-1);
 	}	
 	else
-		printf("binder detect\n");
+		printf("ioman\n");
 
 	ioctl(fd, IOSET_TYPE, PT_IOMAN);
-	if(ioctl(fd,IOC_REGISTER_SERVICE,PT_OSD)<0){
-		printf("no service\n");
-		return -1;
-	}
+
+	get_service(fd);
 
 	printf("send: ping\n");
 	ioctl(fd, IO_PING, buffer);
 
+	tcgetattr(STDIN_FILENO, &oldt);
+	set_rawMode();
 
 	while(1){
-		if(kbhit()){
-			memset(buffer,0,16);
-			read(0,buffer,15);
-			write(fd,buffer,15);
-		}
-	}
 
+		ch = getchar();
+		if (ch>=0) {
+			a = write(fd,&ch,1);
+		}
+
+		if(a < 0){
+			get_service(fd);
+		}
+		if(ch == 'q')
+			break;
+	}
+	
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 	close(fd);	
 
 	return 0;

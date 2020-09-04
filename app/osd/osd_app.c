@@ -8,6 +8,7 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include "binder_ioctl.h"
+#include <string.h>
 
 int loop(){
 	return 0;
@@ -29,17 +30,16 @@ int main()
 		exit(-1);
 	}	
 	else
-		printf("binder detect\n");
+		printf("osd\n");
 
 	ioctl(fd, IOSET_TYPE, PT_OSD);
 	
 	 
-	
 
 	while(1){
 		if(( r=ioctl(fd, DM_DISPLAY_TEXT, buffer))>0){
-			read(fd,buffer, sizeof(char)*16);
-			printf("%s",buffer);
+			read(fd,buffer, sizeof(char)*15);
+			printf("%s\n",buffer);
 		}
 		sleep(0.5);
 	}
