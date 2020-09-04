@@ -12,7 +12,7 @@
 #include "binder_ioctl.h"
 
 pid_t child_pid[2];
-void kill_child();
+
 void ex_osd(){
 
 	child_pid[0] =fork();
@@ -40,13 +40,12 @@ static void child_handler(int sig){
 	if(!pid)
 		return ;
 	fprintf(stderr,"CHILD EXIT %d\n",pid);
-#if 0 
+
 	fprintf(stderr,"restart\n");	
 	if(pid == child_pid[0])
 		ex_osd();
 	else if(pid == child_pid[1])
 		ex_ioman();
-#endif
 }
 
 static void kill_handler(int sig){
@@ -58,18 +57,12 @@ static void kill_handler(int sig){
 	kill(getpid(),SIGINT);
 
 }
-void kill_child(){
-	printf("killing child\n");
-	kill(child_pid[0],SIGKILL);
-	printf("osd killed \n");
-}
 
 int main()
 {
 	int fd;
 	int a = PT_MONITOR;
-	//char *buffer;
-	char buffer[16] = {0,};	// 
+	char buffer[16] = {0,};	 
 	int r;
 	pid_t pid;
 
@@ -87,11 +80,10 @@ int main()
 	ioctl(fd, IOSET_TYPE, PT_MONITOR);
 	
 	ex_osd();
-	ex_osd();
-//	ex_ioman();
+	ex_ioman();
 
 	signal(SIGCHLD,(void *)child_handler);
-	//signal(SIGTERM,(void *)kill_handler);
+	signal(SIGTERM,(void *)kill_handler);
 
 	printf("start\n");
 
