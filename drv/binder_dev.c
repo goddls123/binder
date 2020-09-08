@@ -51,6 +51,8 @@ struct binder_dev {
 	int queue_count;
 };
 
+static DEFINE_MUTEX(binder_lock);
+
 static const char * process_type_str[] = {
 	"default",
 	"monitor",
@@ -104,20 +106,26 @@ static int binder_release(struct inode *nodp, struct file *filp){
 	list_for_each_safe(pos,q,&gBinderDev->client_list){
 		tmp = list_entry(pos,struct binder_client, client );
 		if(tmp->pid == current->pid){
+			mutex_lock(&binder_lock);
 			list_del(&tmp->client);
 			printk("%s close\n",process_type_str[tmp->process_type]);
 			kfree(tmp);
+			mutex_unlock(&binder_lock);
 		}
 	}
 	list_for_each_safe(pos,q,&gBinderDev->service_list){
 		stmp = list_entry(pos,struct binder_service, service );
 		if(stmp->pid == current->pid){
+			mutex_lock(&binder_lock);
 			list_del(&stmp->service);
 			kfree(stmp);
+			mutex_unlock(&binder_lock);
 		}
 		else if(stmp->destination_pid == current->pid){
+			mutex_lock(&binder_lock);
 			list_del(&stmp->service);
 			kfree(stmp);
+			mutex_unlock(&binder_lock);
 		}
 	}
 	gBinderDev->proc_count--;
@@ -172,7 +180,6 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			break; 
 		case IO_PING:
-		//	printk("ping\n");
 			msgbuf = kzalloc(sizeof(*msgbuf),GFP_KERNEL);
 			strcpy(msgbuf->msgtxt,pong);
 			list_for_each_entry(q,&gBinderDev->service_list,service){
@@ -193,7 +200,6 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			break;
 		case DM_DISPLAY_TEXT:
-
 			if(!list_empty(&gBinderDev->queue_list)){
 				return gBinderDev->queue_count;	
 			}
@@ -201,41 +207,12 @@ static long binder_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		case IOC_REGISTER_SERVICE:
 			if(binder_register(arg)<0)
 				return -1;
-#if 0
-			buf = kzalloc(sizeof(*buf),GFP_KERNEL);
-			if (!buf)
-				return -ENOMEM;
-			if(copy_from_user(buf,(void *)arg,sizeof(struct service_list))){
-					return -1;
-			}
-			buf->pid = current->pid;
-			if(binder_register(buf)<0)
-			{
-				printk("register error");
-				return -ENOMEM;
-			}
-#endif
 			break;
 		default:
 			break; 
 	}	
 	return ret;
 }
-#if 0
-int binder_register(struct service_list *service){
-	struct msgque *msgbuf;
-	msgbuf = kzalloc(sizeof(*msgbuf),GFP_KERNEL);
-	if (!msgbuf)
-		return -ENOMEM;
-
-	msgbuf->rservice = service;
-	msgbuf->qid = PT_MONITOR;
-	list_add(&msgbuf->queue,&gBinderDev->queue_list);
-	gBinderDev->queue_count++;
-
-	return 0;
-}
-#endif
 
 #if 0
 static int binder_mmap(struct file *filp, struct vm_area_struct *vma){
@@ -268,8 +245,10 @@ static long binder_write(struct file *file, const char __user *buffer, size_t co
 		}
 	}
 
-	if(!msgbuf->qid)      //no service 
+	if(!msgbuf->qid){      //no service 
+		kfree(msgbuf);
 		return -1;
+	}
 
 	list_for_each_entry(tmp,&gBinderDev->service_list,service){
 		if(tmp->pid == current->pid) {
@@ -279,12 +258,9 @@ static long binder_write(struct file *file, const char __user *buffer, size_t co
 	
 	copy_from_user(msgbuf->msgtxt,buffer,count);
 	msgbuf->count = count;
-#if 0
-	printk("wbuf %s",msgbuf->msgtxt);
-	printk("wuserbuf %s",buffer);
-#endif 
-	list_add(&msgbuf->queue,&gBinderDev->queue_list);
 	
+	list_add(&msgbuf->queue,&gBinderDev->queue_list);
+
 	gBinderDev->queue_count++;
 	
 	return 0;
@@ -295,7 +271,7 @@ static ssize_t binder_read (struct file *file, char __user *buffer, size_t count
 	struct msgque *tmp;
 	
 	memset(buffer,0,count);
-	//printk("count %d\n",gBinderDev->queue_count);
+
 	tmp =list_entry(gBinderDev->queue_list.next, struct msgque, queue); 
 	if(!tmp)
 		return -ENOMEM;
@@ -307,11 +283,7 @@ static ssize_t binder_read (struct file *file, char __user *buffer, size_t count
 		printk("copy error\n");
 		return 0;
 	}
-#if 0 
-	printk("buf %s",tmp->msgtxt);
-	printk("userbuf %s",buffer);
-	printk("count  %d",tmp->count);
-#endif	
+
 	list_del(gBinderDev->queue_list.next);
 	gBinderDev->queue_count--;
 	kfree(tmp);
@@ -377,7 +349,6 @@ static int __init binder_init(void)
 	if (!dev)
 		return -ENOMEM;
 
-
 #if 0
 	refcount_set(&dev->ref, 1);
 	dev->context.binder_context_mgr_uid = INVALID_UID	;
@@ -398,8 +369,6 @@ dev->proc_entry = proc_create("driver/binder",0644,NULL,&proc_fops);
 	INIT_LIST_HEAD(&dev->queue_list);
 	INIT_LIST_HEAD(&dev->service_list);
 #if 0  	
-	hlist_add_head(&binder_dev->hlist, &binder_devices);
-
 	ret = init_binderfs();
 #endif
 	

@@ -7,13 +7,12 @@
 #include <termios.h>
 #include <string.h>
 
-
-
 void set_rawMode(){
   struct termios  newt;
   int oldf;
 
   cfmakeraw(&newt);
+  newt.c_lflag |= (ISIG | IEXTEN);
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
   fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);

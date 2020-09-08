@@ -10,16 +10,11 @@
 #include "binder_ioctl.h"
 #include <string.h>
 
-int loop(){
-	return 0;
-}
-
 int main()
 {
 	int fd;
 	int a = PT_MONITOR;
-	//char *buffer;
-	char buffer[16] = {0,};	// 
+	char buffer[16] = {0,};	 
 	int r;
 
 	fd = open("/dev/binder",O_RDWR);
@@ -34,8 +29,6 @@ int main()
 
 	ioctl(fd, IOSET_TYPE, PT_OSD);
 	
-	 
-
 	while(1){
 		if(( r=ioctl(fd, DM_DISPLAY_TEXT, buffer))>0){
 			read(fd,buffer, sizeof(char)*15);

@@ -4,7 +4,6 @@
 #define _BINDER_IOCTL
 
 #ifdef __KERNEL__
-//#include <linux/fs.h>
 #endif
 
 #define BINDER_MAGIC	'b'
@@ -25,9 +24,5 @@ typedef enum {
 	PT_MAX
 } process_type_e ;
 
-struct service_list{
-	int pid;
-	process_type_e p_type;
-};
 
 #endif
