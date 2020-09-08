@@ -86,7 +86,7 @@ int main()
 	
 	if(execute("../bin/osd",PT_OSD)<0)
 		return -1;
-	if(execute("../bin/ioman",PT_IOMAN))
+	if(execute("../bin/ioman",PT_IOMAN)<0)
 		return -1;
 
 	signal(SIGCHLD,(void *)child_handler);
